@@ -1,136 +1,160 @@
-     <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Educational Hub - Database Portal</title>
-    <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fafafa; color: #1e293b; }
-        .wrapper { display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; width: 100%; box-sizing: border-box; padding: 20px; }
-        .container { text-align: center; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); width: 90%; max-width: 500px; margin-bottom: 20px; box-sizing: border-box; }
-        input[type="text"] { width: 100%; padding: 14px; font-size: 16px; border: 1px solid #e0e0e0; border-radius: 6px; box-sizing: border-box; margin-bottom: 20px; outline: none; background: #f8fafc; color: #1e293b; }
-        input[type="text"]:focus { border-color: #0070f3; background: white; }
-        button { display: block; padding: 14px 30px; font-size: 16px; background: #0070f3; color: white; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; box-sizing: border-box; transition: background 0.2s; }
-        button:hover { background: #0060d0; }
-        .bot-btn { padding: 12px 30px; font-size: 16px; background: #1a1a1a; color: white; border: none; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
-        .bot-btn:hover { background: #000; }
-        #result-link { margin-top: 25px; padding: 15px; background: #f0f7ff; border: 1px solid #bae7ff; border-radius: 6px; display: none; word-break: break-all; font-size: 15px; text-align: left; }
-        #assignment-banner { display: none; width: 100%; text-align: center; color: #666; font-size: 14px; font-weight: bold; background: #e6ffed; padding: 10px 0; border-bottom: 1px solid #b7eb8f; position: fixed; top: 0; left: 0; z-index: 100; }
-        
-        /* Unblocked View Panel Layout */
-        .results-panel { display: none; max-width: 800px; width: 90%; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 40px; margin: 80px auto 40px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.03); box-sizing: border-box; }
-        .results-title { font-size: 28px; margin-top: 0; color: #2c3e50; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; }
-        .results-body { font-size: 16px; line-height: 1.7; color: #334155; }
-        .results-body p { margin-bottom: 20px; }
-    </style>
-</head>
-<body>
-    <!-- Disguise Session Banner -->
-    <div id="assignment-banner"></div>
-    
-    <!-- Unblocked Dynamic Data Display View -->
-    <div id="resultsView" class="results-panel">
-        <h1 id="outputTitle" class="results-title">Loading Resource Document...</h1>
-        <div id="outputContent" class="results-body"></div>
-        <button onclick="window.location.search=''" style="background: #64748b; margin-top: 30px; width: auto; display: inline-block;">Return to Core Hub</button>
-    </div>
+const express = require('express');
+const cors = require('cors');
 
-    <!-- Main Generator UI Wrapper -->
-    <div id="mainUI" class="wrapper">
-        <div class="container">
-            <h2 id="search-title">Resource Search</h2>
-            <input type="text" id="urlInput" placeholder="Type target keyword or topic (e.g., space, physics)..." autocomplete="off">
-            <button id="searchBtn">Execute Research Pipeline</button>
-        </div>
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
-        <div class="container">
-            <h2>Proxy Clone Bot</h2>
-            <p style="color: #666; font-size: 14px;">Click below to instantly generate a completely new web link that mirrors this exact searchbar.</p>
-            <button class="bot-btn" id="cloneBtn">🤖 Replicate Workspace Framework Node</button>
-            <div id="result-link"></div>
-        </div>
-    </div>
+const app = express();
+app.use(cors());
 
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const activeAssignment = urlParams.get('assignment');
-        const activeSearch = urlParams.get('q');
-        
-        // Step A: Re-configure dashboard display if assignment tracking parameters exist
-        if (activeAssignment) {
-            const banner = document.getElementById('assignment-banner');
-            banner.style.display = "block";
-            banner.innerText = '📚 Active Session: ' + activeAssignment.toUpperCase();
-            document.getElementById('search-title').innerText = "Workspace Database Search";
-        }
+app.get('/', (req, res) => {
+    const activeAssignment = req.query.assignment || '';
+    const activeSearch = req.query.q || '';
 
-        // Step B: Fetch unblocked resource layout text through the API data gateway natively
-        if (activeSearch) {
-            document.getElementById('mainUI').style.display = "none";
-            document.getElementById('resultsView').style.display = "block";
-            
-            fetchWikiData(activeSearch);
-        }
+    let bannerStyle = "display: none;";
+    let bannerText = "";
+    let headerText = "General Database Search Gateway";
 
-        async function fetchWikiData(query) {
-            const cleanQuery = query.replace(/https?:\\/\\/(www\\.)?/, '').replace(/\\..*$/, '');
-            const endpoint = `https://wikipedia.org{encodeURIComponent(cleanQuery)}&origin=*`;
-            
-            try {
-                const res = await fetch(endpoint);
-                const data = await res.json();
-                const pages = data.query.pages;
-                const pageId = Object.keys(pages)[0];
-                
-                if (pageId !== "-1") {
-                    document.getElementById('outputTitle').innerText = pages[pageId].title;
-                    document.getElementById('outputContent').innerHTML = "<p>" + pages[pageId].extract.replace(/\\n/g, "</p><p>") + "</p>";
-                } else {
-                    // Fallback to general lookup search array if direct title mismatch occurs
-                    const searchFallback = `https://wikipedia.org{encodeURIComponent(cleanQuery)}&origin=*`;
-                    const fallRes = await fetch(searchFallback);
-                    const fallData = await fallRes.json();
-                    
-                    if (fallData[1] && fallData[1].length > 0) {
-                        document.getElementById('outputTitle').innerText = `Search Indexes for: "${cleanQuery}"`;
-                        let listHtml = "<ul>";
-                        for (let i = 0; i < fallData[1].length; i++) {
-                            listHtml += `<li><strong>${fallData[1][i]}</strong>: ${fallData[2][i] || 'Reference context available.'}</li>`;
-                        }
-                        listHtml += "</ul>";
-                        document.getElementById('outputContent').innerHTML = listHtml;
-                    } else {
-                        document.getElementById('outputTitle').innerText = "Database Node Empty";
-                        document.getElementById('outputContent').innerText = "No unblocked data packets matching your search parameters could be extracted.";
+    if (activeAssignment) {
+        bannerStyle = "display: inline-block;";
+        bannerText = `Active Session: ${activeAssignment.toUpperCase()}`;
+        headerText = `Research Module: ${activeAssignment.replace(/-/g, ' ').toUpperCase()}`;
+    }
+
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Student Workspace Portal - Academic Database</title>
+            <style>
+                body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f6f9; color: #1e293b; overflow: hidden; }
+                .app-container { display: flex; min-height: 100vh; width: 100%; }
+                .sidebar { width: 260px; background: #2c3e50; color: white; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; border-right: 1px solid rgba(255,255,255,0.1); }
+                .school-logo { font-size: 18px; font-weight: 800; letter-spacing: 0.5px; padding-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+                .nav-item { padding: 12px 15px; border-radius: 6px; margin-bottom: 8px; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.8); }
+                .nav-item.active { background: #34495e; color: white; }
+                .main-content { flex: 1; padding: 40px; box-sizing: border-box; overflow-y: auto; display: flex; flex-direction: column; gap: 30px; }
+                .header-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; position: relative; overflow: hidden; }
+                .header-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #0070f3; }
+                .status-badge { display: ${activeAssignment ? 'inline-block' : 'none'}; padding: 4px 12px; font-size: 12px; font-weight: 700; border-radius: 20px; background: #dcfce7; color: #15803d; margin-bottom: 12px; text-transform: uppercase; }
+                .card-title { margin: 0 0 8px 0; font-size: 24px; color: #2c3e50; }
+                .tool-box { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 30px; }
+                input[type="text"] { width: 100%; padding: 14px 16px; font-size: 15px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; margin-bottom: 20px; outline: none; background: #f8fafc; color: #1e293b; }
+                input[type="text"]:focus { border-color: #0070f3; background: white; }
+                .action-btn { display: block; padding: 14px 24px; font-size: 15px; background: #0070f3; color: white; border: none; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; box-sizing: border-box; text-align: center; }
+                .bot-btn { background: #1e293b; margin-top: 10px; }
+                #result-link { margin-top: 25px; padding: 15px; background: #f0f7ff; border: 1px solid #bae7ff; border-radius: 8px; display: none; word-break: break-all; font-size: 14px; }
+                .view-panel { display: ${activeSearch ? 'block' : 'none'}; width: 100%; height: 100%; border: none; box-sizing: border-box; position: fixed; top: 0; left: 0; z-index: 1000; background: #fff; }
+                iframe { width: 100%; height: 100%; border: none; margin: 0; padding: 0; }
+            </style>
+        </head>
+        <body>
+            <div id="viewPanel" class="view-panel">
+                <iframe src="/service?url=${encodeURIComponent(activeSearch)}"></iframe>
+            </div>
+            <div id="mainUI" class="app-container">
+                <div class="sidebar">
+                    <div class="school-logo">CampusWorkspace</div>
+                    <div class="nav-item active">Assignment Core</div>
+                    <div class="nav-item">Course Modules</div>
+                    <div class="nav-item">Grade Book</div>
+                </div>
+                <div class="main-content">
+                    <div class="header-card">
+                        <div class="status-badge">${bannerText}</div>
+                        <h1 class="card-title">${headerText}</h1>
+                    </div>
+                    <div class="tool-box">
+                        <h3>External Research Engine Tunnel</h3>
+                        <p style="color:#64748b; font-size:14px; margin-bottom:20px;">Type any URL or streaming media site below to compile an unblocked proxy pipeline inside this viewport layout.</p>
+                        <input type="text" id="urlInput" placeholder="Enter target site here (e.g., dulo.tv, google.com)..." autocomplete="off">
+                        <button class="action-btn" id="searchBtn">Execute Research Pipeline</button>
+                    </div>
+                    <div class="tool-box">
+                        <h3>Proxy Dispenser Bot</h3>
+                        <button class="action-btn bot-btn" id="cloneBtn">Replicate Workspace Node</button>
+                        <div id="result-link"></div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                document.getElementById('searchBtn').onclick = function() {
+                    let target = document.getElementById('urlInput').value.trim();
+                    if (!target) return;
+                    if (!target.includes('.')) {
+                        target = 'https://google.com' + encodeURIComponent(target);
+                    } else if (!/^https?:\\/\\//i.test(target)) {
+                        target = 'https://' + target;
                     }
-                }
-            } catch (err) {
-                document.getElementById('outputTitle').innerText = "Network Tracing Fault";
-                document.getElementById('outputContent').innerText = "Connection lost at server gateway: " + err.message;
+                    const subs = ['algebra-workbook', 'geometry-proofs', 'calculus-limits', 'history-archive'];
+                    const randomSubject = subs[Math.floor(Math.random() * subs.length)] + '-' + Math.floor(1000 + Math.random() * 9999);
+                    window.location.href = '/?assignment=' + randomSubject + '&q=' + encodeURIComponent(target);
+                };
+                document.getElementById('cloneBtn').onclick = function() {
+                    const div = document.getElementById('result-link');
+                    div.style.display = "block";
+                    const subs = ['algebra-workbook', 'geometry-proofs', 'calculus-limits', 'history-archive'];
+                    const randomSubject = subs[Math.floor(Math.random() * subs.length)] + '-' + Math.floor(1000 + Math.random() * 9999);
+                    const newLink = window.location.origin + '/?assignment=' + randomSubject;
+                    div.innerHTML = '<strong>Generated Node Link:</strong><br><br><a href="' + newLink + '" target="_self" style="color:#0070f3; font-weight:bold; text-decoration:none;">' + newLink + '</a>';
+                };
+            </script>
+        </body>
+        </html>
+    `);
+});
+
+app.get('/service', async (req, res) => {
+    let targetUrl = req.query.url;
+    if (!targetUrl) return res.status(400).send("No target site URL specified.");
+
+    try {
+        const urlObj = new URL(targetUrl);
+        const options = {
+            method: 'GET',
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': '*/*',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Origin': urlObj.origin,
+                'Referer': urlObj.origin
             }
+        };
+
+        const response = await fetch(targetUrl, options);
+        let contentType = response.headers.get('content-type') || '';
+        
+        if (!contentType.includes('text/html')) {
+            const dataBuffer = await response.buffer();
+            res.setHeader('Content-Type', contentType);
+            return res.send(dataBuffer);
         }
 
-        document.getElementById('searchBtn').onclick = function() {
-            let target = document.getElementById('urlInput').value.trim();
-            if (!target) return;
-
-            const subs = ['algebra-workbook', 'geometry-proofs', 'calculus-limits', 'history-archive', 'literature-notes', 'chemistry-lab', 'biology-cells'];
-            const randomSubject = subs[Math.floor(Math.random() * subs.length)] + '-' + Math.floor(1000 + Math.random() * 9999);
-
-            // Step C: Force in-tab redirection to update your address bar with your custom assignment mask link
-            const factoryPath = window.location.origin + window.location.pathname;
-            window.location.href = factoryPath + '?assignment=' + randomSubject + '&q=' + encodeURIComponent(target);
-        };
+        let htmlContent = await response.text();
+        const injectionBase = `<head><base href="${urlObj.origin}/"><script>
+            (function() {
+                const originFetch = window.fetch;
+                window.fetch = function(url, options) {
+                    if (url && !url.toString().startsWith('http') && !url.toString().startsWith('/')) {
+                        url = "${urlObj.origin}/" + url;
+                    }
+                    return originFetch(url, options);
+                };
+            })();
+        </script>`;
         
-        document.getElementById('cloneBtn').onclick = function() {
-            const div = document.getElementById('result-link');
-            div.style.display = "block";
-            const subs = ['algebra-workbook', 'geometry-proofs', 'calculus-limits', 'history-archive', 'literature-notes', 'chemistry-lab', 'biology-cells'];
-            const randomSubject = subs[Math.floor(Math.random() * subs.length)] + '-' + Math.floor(1000 + Math.random() * 9999);
-            const currentUrl = window.location.origin + window.location.pathname;
-            const newLink = currentUrl + '?assignment=' + randomSubject;
-            div.innerHTML = '<strong>New Link Created!</strong><br><br><a href="' + newLink + '" target="_self" style="color: #0070f3; font-weight: bold; text-decoration: none;">' + newLink + '</a>';
-        };
-    </script>
-</body>
-</html>
+        htmlContent = htmlContent.replace(/<head>/i, injectionBase);
+        htmlContent = htmlContent.replace(/content-security-policy/gi, 'disabled-csp');
+        htmlContent = htmlContent.replace(/x-frame-options/gi, 'disabled-xfo');
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(htmlContent);
+    } catch (err) {
+        res.status(500).send(`<h3>Streaming Proxy Server Error:</h3><p>${err.message}</p>`);
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Streaming Proxy operating live on port ${PORT}`));
+
